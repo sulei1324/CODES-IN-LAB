@@ -1,0 +1,9 @@
+function [pRange]=projectRange(file)
+
+f=dir(file);
+fNum=size(f,1);
+pRange=zeros(fNum-2,2);
+
+for i=3:fNum
+    fName=f(i).name;
+    fir

@@ -1,0 +1,14 @@
+clc;
+clear all;
+global i;
+i = 0;
+fun = @averSmooth;
+I = imread('2.tif');
+I = double(I);
+I2 = blockproc(I,[3 3],fun);
+figure;
+I = uint8(I);
+imshow(I);
+figure;
+I2 = uint8(I2);
+imshow(I2);

@@ -1,0 +1,66 @@
+% clc;
+% clear all;
+% 
+% 
+% % a=imread('Y:\Public\mostzhangyalun\sulei\matlab\test_dst\trace\test_01.tif');
+% a=imread('.\0.tif');
+% b=repmat(double((a)./255),[1,1,3]);
+% 
+% 
+% 
+% swc=load('I9.swc');
+% % src='Y:\Archive\MBA-GF13004_preprocess\Src_Pro\allproject\';
+% % dst='Y:\Public\mostzhangyalun\sulei\matlab\test_dst\trace\';
+% % width=23400;
+% % height=32200;
+% % zRange=[101,6100];
+% % pre='test_';
+% % suf='.tif';
+% % interval=300;
+% % overlap=400;
+% % inImage=zeros(height,width);
+% % f=dir(src);
+% % pRange=projectRange(src);
+% swc(:,3:4)=swc(:,3:4)*10/3;
+% lineArray=readLine(swc);
+% lineNum=size(lineArray,1);
+% lineLong=zeros(lineNum,2);
+% for i=1:lineNum
+%     lineLong(i,1)=size(lineArray{i,1},1);
+%     lineLong(i,2)=i;
+% end
+% m=max(lineLong(:,1));
+% l=find(lineLong(:,1)==m);
+% n=size(l,1);
+% 
+% for j=1:n
+%     whichLine=lineLong(l(1,j),2);
+%     maxLineNum=lineLong(l(1,j),1);
+%     singleLineSwc=zeros(maxLineNum,7);
+%     xyz=zeros(1,3);
+%     for i=1:maxLineNum
+%         singleLineSwc(i,1)=i;
+%         singleLineSwc(i,2)=1;
+%         singleLineSwc(i,3:5)=round(lineArray{whichLine,1}(i,3:5));
+%         singleLineSwc(i,6)=1;
+%         if(i==1)
+%             singleLineSwc(i,7)=-1;
+%         else
+%             singleLineSwc(i,7)=i-1;
+%         end
+%     end
+% end
+
+
+R=8;
+ball=sphericalArea(R);
+lBall=size(ball,1);
+for i=1:m
+    x=singleLineSwc(i,3);
+    y=singleLineSwc(i,4);
+    for j=1:lBall
+        
+        b(y,x,:)=[0 1 0];
+end
+
+imshow(b);

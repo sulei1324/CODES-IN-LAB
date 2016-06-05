@@ -1,0 +1,3 @@
+#mpdboot -f ./host -n 3
+/usr/mpi/gcc/openmpi-1.4.3/bin/mpirun -np 4 -hostfile ./hostfile  python ./mpiTest.py
+#mpiexec -n 3 python ./test.py

@@ -1,0 +1,7 @@
+function [choosedNum]=chooseProjectImage(zStart,zEnd,pRange)
+
+m=size(pRange,1);
+for i=1:m
+    if((pRange(i,1)<=zStart)&&(pRange(i,2)>=zEnd))
+        choosedNum(i,)
+

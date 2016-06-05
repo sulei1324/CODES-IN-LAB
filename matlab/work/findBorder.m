@@ -1,0 +1,98 @@
+%为了防止index出边界,可以外加两层0元素,重点在于制定检测点转移方向.
+%优化检测条件判断循环顺序,此版本为总是从右侧点开始判断,循环一周.存在太多无用判定.
+function border=findBorder(inImage)
+
+[m,n]=size(inImage);
+flag=0;
+for j=1:m
+    for k=1:n
+        if(inImage(j,k)==1) 
+            flag=1;
+            break;
+        end
+    end
+    if(flag==1)
+        break;
+    end
+end
+border=zeros(m,n);
+disp(j);
+disp(k);
+x=j;
+y=k-1;
+disp(x);
+disp(y);
+num=0;
+i=inImage;
+o=border;
+while(1)
+    if((x==j)&(y==(k-1))&(num~=0)) break;
+    end
+    o(x,y)=1;
+    if((i(x,y+1)==0)&(i(x-1,y+1)==1)) 
+        num=num+1;
+        x=x;
+        y=y+1;
+        disp(x);
+        disp(y);
+        continue;
+    end
+    if((i(x-1,y+1)==0)&(i(x-1,y)==1)) 
+        num=num+1;
+        x=x-1;
+        y=y+1;
+        disp(x);
+        disp(y);
+        continue;
+    end
+    if((i(x-1,y)==0)&(i(x-1,y-1)==1)) 
+        num=num+1;
+        x=x-1;
+        y=y;
+        disp(x);
+        disp(y);
+        continue;
+    end
+    if((i(x-1,y-1)==0)&(i(x,y-1)==1)) 
+        num=num+1;
+        x=x-1;
+        y=y-1;
+        disp(x);
+        disp(y);
+        continue;
+    end
+    if((i(x,y-1)==0)&(i(x+1,y-1)==1)) 
+        num=num+1;
+        x=x;
+        y=y-1;
+        disp(x);
+        disp(y);
+        continue;
+    end
+    if((i(x+1,y-1)==0)&(i(x+1,y)==1)) 
+        num=num+1;
+        x=x+1;
+        y=y-1;
+        disp(x);
+        disp(y);
+        continue;
+    end
+    if((i(x+1,y)==0)&(i(x+1,y+1)==1)) 
+        num=num+1;
+        x=x+1;
+        y=y;
+        disp(x);
+        disp(y);
+        continue;
+    end
+    if((i(x+1,y+1)==0)&(i(x,y+1)==1)) 
+        num=num+1;
+        x=x+1;
+        y=y+1;
+        disp(x);
+        disp(y);
+        continue;
+    end
+end
+border=o;
+

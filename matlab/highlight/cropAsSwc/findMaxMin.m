@@ -1,0 +1,19 @@
+function [maxL,minL]=findMaxMin(x,y,z,maxL,minL)
+if(x>maxL(1,1))
+    maxL(1,1)=x;
+end
+if(y>maxL(1,2))
+    maxL(1,2)=y;
+end
+if(z>maxL(1,3))
+    maxL(1,3)=z;
+end
+if(x<minL(1,1))
+    minL(1,1)=x;
+end
+if(y<minL(1,2))
+    minL(1,2)=y;
+end
+if(z<minL(1,3))
+    minL(1,3)=z;
+end

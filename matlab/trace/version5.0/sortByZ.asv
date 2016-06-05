@@ -1,0 +1,19 @@
+function [outXYZ]=sortByZ(inXYZ)
+
+l=size(inXYZ,1);
+
+minZ=min(inXYZ(:,3));
+maxZ=max(inXYZ(:,3));
+zNum=maxZ-minZ+1;
+outXYZ={};
+
+for i=minZ:maxZ
+    num=0;
+    n=find(inXYZ(:,3)==i);
+    num=num+size(n,1);
+    pointInZ=zeros(num,3);
+    
+    pointInZ(:,1:3)=inXYZ(n,1:3);
+    outXYZ{i-min,1}=pointInZ;
+end
+

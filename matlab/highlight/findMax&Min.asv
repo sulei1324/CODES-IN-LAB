@@ -1,0 +1,10 @@
+function [a,b,c]=findMaxMin(x,y,z,maxL,minL)
+if(x>maxX)
+   maxX=x;
+end
+if(y>maxY)
+    maxY=y;
+            end
+            if(z>maxZ)
+                maxZ=z;
+            end

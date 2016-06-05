@@ -1,0 +1,50 @@
+clc;
+
+clear all;
+
+I=imread('test3_1-2369_stride_2369_crop.tif');
+I=double(I);
+% I=magic(5);
+
+[m,n]=size(I);
+
+R=50;
+L=2*R+1;
+sigma=1;
+
+mirroredI=mirrorBundary(I,R);
+
+tmpI=chooseMax(mirroredI,R);
+
+tmpI2=bilinearMax(tmpI,R);
+% tmpI2=uint8(tmpI2);
+g=gussian(2*L,sigma);
+
+% [mg,ng]=size(g);
+
+
+back=convWithG(tmpI2,g);
+
+% outImage=tmpI3(mg:mg+m-1,ng:ng+n-1);
+
+
+outImage=I-back;
+
+for i=1:m
+    for j=1:n
+        if(outImage(i,j)>255)
+            outImage(i,j)=255;
+        end
+        if(outImage(i,j)<0)
+            outImage=0;
+        end
+    end
+end
+
+
+outImage=uint8(outImage);
+back=uint8(back);
+imshow(back);
+figure,imshow(outImage);
+
+

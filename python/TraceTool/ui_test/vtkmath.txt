@@ -1,0 +1,149 @@
+import vtk
+import math
+
+
+"""
+vtk.vtkPoints(): A set of points cam be collected in a vtkPoints
+object by first setting the number of points with the
+vtkPoints.SetNumberOfPoints(npts) method and then enumerating
+through the points and using the vtkPoints.SetPoint(i, point) method.
+"""
+npts      = 100
+vtkPoints = vtk.vtkPoints()
+vtkPoints.SetNumberOfPoints(100)
+for i in range (npts): 
+  x = math.sin(math.pi*i/20.)
+  y = math.cos(math.pi*i/20.)
+  z = 2*i/float(npts)
+  vtkPoints.SetPoint(i, (x,y,z))
+"""
+vtk.vtkCellArray(): the ordering of the points or the connectivity of
+the points can be captured with a vtkCellArray object. This is done by
+first declaring that you will be inserting a cell with a set number of
+points using the vtkCellArray.InsertNextCell(npts) and then looping
+over the range of the number of points with the following loop,
+for i in range(npts):
+ vtkCellArray.InsertCellPoint(i)
+"""
+vtkCellArray = vtk.vtkCellArray()
+vtkCellArray.InsertNextCell(npts)
+for i in range(npts):
+  vtkCellArray.InsertCellPoint(i)
+"""
+vtk.vtkFLoatArray(): A set of values associated with the initial
+points, be it force magnitudes at the point or bending moments, can be
+captured as a scalar array of floating point values with the
+vtkFloatArray object. this is done by first declaring the number of
+scalars with the vtkFloatArray.SetNumberOfValues(npts) method and then
+enumerating through the points and using the
+vtkFloatArray.SetValue(i, value) method.
+"""
+value = lambda i: math.fabs(math.sin(math.pi*i/30.))
+vtkFloatArray = vtk.vtkFloatArray()
+vtkFloatArray.SetNumberOfValues(npts)
+for i in range(npts):
+  vtkFloatArray.SetValue(i, value(i))
+"""
+vtk.vtkPolyData(): The point connectivity and scalar values can be
+encapsulated in the vtkPolyData object this is done by using the,
+vtkPolyData.SetPoints(vtkPoints), vtkPolyData.SetLines(vtkCellArray) and
+vtkPolyData.GetPointData().SetScalars(vtkFLoatArray) methods
+"""
+vtkPolyData = vtk.vtkPolyData()
+vtkPolyData.SetPoints(vtkPoints)
+vtkPolyData.SetLines(vtkCellArray)
+vtkPolyData.GetPointData().SetScalars(vtkFloatArray)
+"""
+vtk.vtkSplineFilter(): The data can be smoothly interpolated across a
+number number of subdivisions using the vtkSplineFilter object. This
+is accomplished by first setting the input of the spline filter to be
+the previously constructed vtkPolyData object using the
+vtkSplineFilter.SetInput(vtkPolyData) method, and then setting the
+number of desired subdivisions to create a smooth curve with the
+vtkSplineFilter.SetNumberOfSubdivisions(int), and finally call the
+vtkSplineFilter.Update() method.
+"""
+vtkSplineFilter = vtk.vtkSplineFilter()
+vtkSplineFilter.SetInput(vtkPolyData)
+vtkSplineFilter.SetNumberOfSubdivisions(5*npts)
+vtkSplineFilter.Update()
+
+"""
+vtk.vtkTubeFilter(): The data can be visualized as colored tube using
+the vtkTubeFilter. This is accomplished by first setting the
+vtkplineFilter output port as the input connection to the
+vtkTubleFilter with the,
+vtkTubeFilter.SetInputConnection(vtkSplineFilter.GetOutputPort())
+statement. The tubes radius of the can be set with the
+vtkTubeFilter.SetRadius(radius) method. The smoothness around the tube
+can be adjusted with the vtkTubeFilter.SetNumberOfSides(nSides)
+method. If it is desired to have the end caps on the tube this can be
+done with the vtkTubeFilter.CappingOn() method.
+"""
+vtkTubeFilter = vtk.vtkTubeFilter()
+vtkTubeFilter.SetInputConnection(vtkSplineFilter.GetOutputPort())
+vtkTubeFilter.SetRadius(0.15)
+vtkTubeFilter.SetNumberOfSides(20)
+vtkTubeFilter.CappingOn()
+"""
+vtk.vtkPolyDataMapper(): The out put of the vtkTubeFilter can be
+visulized by creating a vtkPolyDataMapper object and then setting the
+vtkTubeFilters output port as the input connection of the
+vtkPolyDataMapper with the
+vtkPolyDataMapper.SetInputConnection(vtkTubeFilter.GetOutputPort())
+method.
+"""
+vtkPolyDataMapper = vtk.vtkPolyDataMapper()
+vtkPolyDataMapper.SetInputConnection(vtkTubeFilter.GetOutputPort())
+
+"""
+vtk.vtkActor(): the vtkPolyDataMapper construction can be pipped into
+a vtkActor object using the vtkActor.SetMapper(vtkPolyDataMapper)
+method.
+"""
+vtkActor = vtk.vtkActor()
+vtkActor.SetMapper(vtkPolyDataMapper)
+"""
+vtk.vtkRenderer(): The vtkActor can be rendered for the screen 
+by using the vtkRenderer.AddActor(vtkActor) method.
+"""
+vtkRenderer = vtk.vtkRenderer()
+vtkRenderer.AddActor(vtkActor)
+"""
+vtk.vtkRenderWindow(): the vtkRenderer can be added to a render window
+with the vtkRenderWindow.AddRenderer(vtkRenderer) method. The final
+rendering can be exicuted with the vtkRenderWindow.Render() method
+"""
+vtkRenderWindow = vtk.vtkRenderWindow()
+vtkRenderWindow.AddRenderer(vtkRenderer)
+vtkRenderWindow.Render()
+"""
+vtk.vtkRenderWindowInteractor(): The render window can be held on
+the screen by adding set it with the
+vtkRenderWindow.SetRenderWindow(vtkRenderWindow) method. Then you
+must start and initialize the vtkRenderWindowInteractor with the
+vtkRenderWindowInteractor.Initialize() and
+vtkRenderWindowInteractor.Start() methods.
+"""
+vtkRenderWindowInteractor = vtk.vtkRenderWindowInteractor()
+vtkRenderWindowInteractor.SetRenderWindow(vtkRenderWindow)
+vtkRenderWindowInteractor.Initialize()
+vtkRenderWindowInteractor.Start()
+
+
+
+from __future__ import print_function
+import vtk
+import math
+ 
+p0 = (0,0,0)
+p1 = (1,1,1)
+ 
+distSquared = vtk.vtkMath.Distance2BetweenPoints(p0,p1)
+ 
+dist = math.sqrt(distSquared)
+ 
+print("p0 = ", p0)
+print("p1 = ", p1)
+print("distance squared = ", distSquared)
+print("distance = ", dist)

@@ -1,0 +1,634 @@
+import vtk
+
+picker = vtk.vtkCellPicker()
+
+def pickerfunc (object, event):
+    #style = clientdata;
+    #pickPos = picker.GetPickPosition()
+    #print event
+    if event == 'LeftButtonPressEvent':
+    print 'DOK'
+    if event == 'LeftButtonReleaseEvent':
+    print 'ROK'
+
+cone = vtk.vtkConeSource()
+cone.SetHeight( 3.0 )
+cone.SetRadius( 1.0 )
+cone.SetResolution( 10 )
+
+map = vtk.vtkPolyDataMapper()
+map.SetInputConnection(cone.GetOutputPort())
+
+actor = vtk.vtkActor()
+actor.SetMapper(map)
+
+ren = vtk.vtkRenderer()
+ren.AddActor(actor)
+ren.SetBackground(0.1, 0.2, 0.4)
+
+renWin = vtk.vtkRenderWindow()
+renWin.AddRenderer(ren)
+renWin.SetSize(300, 300)
+
+iren = vtk.vtkRenderWindowInteractor()
+iren.SetRenderWindow(renWin)
+
+style = vtk.vtkInteractorStyleTrackballCamera()
+iren.SetInteractorStyle(style)
+
+picker.AddObserver("EndPickEvent", pickerfunc)     #将事件与回调函数建立连接
+style.AddObserver ('LeftButtonPressEvent', pickerfunc)
+style.AddObserver ('LeftButtonReleaseEvent', pickerfunc)
+style.AddObserver ('MouseMoveEvent', pickerfunc)
+
+#style.RemoveObservers ('LeftButtonPressEvent')        ##删除消息事件连接
+#style.RemoveObservers ('LeftButtonReleaseEvent')
+#style.RemoveObservers ('MouseMoveEvent')
+
+iren.SetPicker (picker)
+
+iren.Initialize()
+iren.Start()
+
+
+
+#include <vtkVersion.h>
+#include <vtkSmartPointer.h>
+#include <vtkRendererCollection.h>
+#include <vtkDataSetMapper.h>
+#include <vtkUnstructuredGrid.h>
+#include <vtkIdTypeArray.h>
+#include <vtkTriangleFilter.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkActor.h>
+#include <vtkCommand.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkPolyData.h>
+#include <vtkPoints.h>
+#include <vtkCellArray.h>
+#include <vtkPlaneSource.h>
+#include <vtkCellPicker.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkProperty.h>
+#include <vtkSelectionNode.h>
+#include <vtkSelection.h>
+#include <vtkExtractSelection.h>
+#include <vtkObjectFactory.h>
+ 
+// Catch mouse events
+class MouseInteractorStyle : public vtkInteractorStyleTrackballCamera
+{
+  public:
+  static MouseInteractorStyle* New();
+ 
+  MouseInteractorStyle()
+  {
+    selectedMapper = vtkSmartPointer<vtkDataSetMapper>::New();
+    selectedActor = vtkSmartPointer<vtkActor>::New();
+  }
+ 
+    virtual void OnLeftButtonDown()
+    {
+      // Get the location of the click (in window coordinates)
+      int* pos = this->GetInteractor()->GetEventPosition();
+ 
+      vtkSmartPointer<vtkCellPicker> picker =
+        vtkSmartPointer<vtkCellPicker>::New();
+      picker->SetTolerance(0.0005);
+ 
+      // Pick from this location.
+      picker->Pick(pos[0], pos[1], 0, this->GetDefaultRenderer());
+ 
+      double* worldPosition = picker->GetPickPosition();
+      std::cout << "Cell id is: " << picker->GetCellId() << std::endl;
+ 
+      if(picker->GetCellId() != -1)
+        {
+ 
+        std::cout << "Pick position is: " << worldPosition[0] << " " << worldPosition[1]
+                  << " " << worldPosition[2] << endl;
+ 
+        vtkSmartPointer<vtkIdTypeArray> ids =
+          vtkSmartPointer<vtkIdTypeArray>::New();
+        ids->SetNumberOfComponents(1);
+        ids->InsertNextValue(picker->GetCellId());
+ 
+        vtkSmartPointer<vtkSelectionNode> selectionNode =
+          vtkSmartPointer<vtkSelectionNode>::New();
+        selectionNode->SetFieldType(vtkSelectionNode::CELL);
+        selectionNode->SetContentType(vtkSelectionNode::INDICES);
+        selectionNode->SetSelectionList(ids);
+ 
+        vtkSmartPointer<vtkSelection> selection =
+          vtkSmartPointer<vtkSelection>::New();
+        selection->AddNode(selectionNode);
+ 
+        vtkSmartPointer<vtkExtractSelection> extractSelection =
+          vtkSmartPointer<vtkExtractSelection>::New();
+#if VTK_MAJOR_VERSION <= 5
+        extractSelection->SetInput(0, this->Data);
+        extractSelection->SetInput(1, selection);
+#else
+        extractSelection->SetInputData(0, this->Data);
+        extractSelection->SetInputData(1, selection);
+#endif
+        extractSelection->Update();
+ 
+        // In selection
+        vtkSmartPointer<vtkUnstructuredGrid> selected =
+          vtkSmartPointer<vtkUnstructuredGrid>::New();
+        selected->ShallowCopy(extractSelection->GetOutput());
+ 
+        std::cout << "There are " << selected->GetNumberOfPoints()
+                  << " points in the selection." << std::endl;
+        std::cout << "There are " << selected->GetNumberOfCells()
+                  << " cells in the selection." << std::endl;
+ 
+ 
+#if VTK_MAJOR_VERSION <= 5
+        selectedMapper->SetInputConnection(
+          selected->GetProducerPort());
+#else
+        selectedMapper->SetInputData(selected);
+#endif
+ 
+        selectedActor->SetMapper(selectedMapper);
+        selectedActor->GetProperty()->EdgeVisibilityOn();
+        selectedActor->GetProperty()->SetEdgeColor(1,0,0);
+        selectedActor->GetProperty()->SetLineWidth(3);
+ 
+        this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer()->AddActor(selectedActor);
+ 
+        }
+      // Forward events
+      vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
+    }
+ 
+    vtkSmartPointer<vtkPolyData> Data;
+    vtkSmartPointer<vtkDataSetMapper> selectedMapper;
+    vtkSmartPointer<vtkActor> selectedActor;
+ 
+};
+ 
+vtkStandardNewMacro(MouseInteractorStyle);
+ 
+int main (int, char *[])
+{
+  vtkSmartPointer<vtkPlaneSource> planeSource =
+    vtkSmartPointer<vtkPlaneSource>::New();
+  planeSource->Update();
+ 
+  vtkSmartPointer<vtkTriangleFilter> triangleFilter =
+    vtkSmartPointer<vtkTriangleFilter>::New();
+  triangleFilter->SetInputConnection(planeSource->GetOutputPort());
+  triangleFilter->Update();
+ 
+  vtkSmartPointer<vtkPolyDataMapper> mapper =
+    vtkSmartPointer<vtkPolyDataMapper>::New();
+  mapper->SetInputConnection(triangleFilter->GetOutputPort());
+ 
+  vtkSmartPointer<vtkActor> actor =
+    vtkSmartPointer<vtkActor>::New();
+  actor->GetProperty()->SetColor(0,1,0); //green
+  actor->SetMapper(mapper);
+ 
+  vtkSmartPointer<vtkRenderer> renderer =
+    vtkSmartPointer<vtkRenderer>::New();
+  vtkSmartPointer<vtkRenderWindow> renderWindow =
+    vtkSmartPointer<vtkRenderWindow>::New();
+  renderWindow->AddRenderer(renderer);
+ 
+  vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
+    vtkSmartPointer<vtkRenderWindowInteractor>::New();
+  renderWindowInteractor->SetRenderWindow(renderWindow);
+  renderWindowInteractor->Initialize();
+ 
+  // Set the custom stype to use for interaction.
+  vtkSmartPointer<MouseInteractorStyle> style =
+    vtkSmartPointer<MouseInteractorStyle>::New();
+  style->SetDefaultRenderer(renderer);
+  style->Data = triangleFilter->GetOutput();
+ 
+  renderWindowInteractor->SetInteractorStyle(style);
+ 
+  renderer->AddActor(actor);
+  renderer->ResetCamera();
+ 
+  renderer->SetBackground(0,0,1); // Blue
+ 
+  renderWindow->Render();
+  renderWindowInteractor->Start();
+ 
+  return EXIT_SUCCESS;
+}
+
+#include <vtkSmartPointer.h>
+#include <vtkRendererCollection.h>
+#include <vtkPointPicker.h>
+#include <vtkSphereSource.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkRenderer.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkActor.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkObjectFactory.h>
+ 
+// Define interaction style
+class MouseInteractorStylePP : public vtkInteractorStyleTrackballCamera
+{
+  public:
+    static MouseInteractorStylePP* New();
+    vtkTypeMacro(MouseInteractorStylePP, vtkInteractorStyleTrackballCamera);
+ 
+    virtual void OnLeftButtonDown() 
+    {
+      std::cout << "Picking pixel: " << this->Interactor->GetEventPosition()[0] << " " << this->Interactor->GetEventPosition()[1] << std::endl;
+      this->Interactor->GetPicker()->Pick(this->Interactor->GetEventPosition()[0], 
+                         this->Interactor->GetEventPosition()[1], 
+                         0,  // always zero.
+                         this->Interactor->GetRenderWindow()->GetRenderers()->GetFirstRenderer());
+      double picked[3];
+      this->Interactor->GetPicker()->GetPickPosition(picked);
+      std::cout << "Picked value: " << picked[0] << " " << picked[1] << " " << picked[2] << std::endl;
+      // Forward events
+      vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
+    }
+ 
+};
+ 
+vtkStandardNewMacro(MouseInteractorStylePP);
+ 
+int main(int, char *[])
+{
+  vtkSmartPointer<vtkSphereSource> sphereSource = 
+    vtkSmartPointer<vtkSphereSource>::New();
+  sphereSource->Update();
+ 
+  vtkSmartPointer<vtkPointPicker> pointPicker = 
+    vtkSmartPointer<vtkPointPicker>::New();
+ 
+  // Create a mapper and actor
+  vtkSmartPointer<vtkPolyDataMapper> mapper = 
+    vtkSmartPointer<vtkPolyDataMapper>::New();
+  mapper->SetInputConnection(sphereSource->GetOutputPort());
+  vtkSmartPointer<vtkActor> actor = 
+    vtkSmartPointer<vtkActor>::New();
+  actor->SetMapper(mapper);
+ 
+  // Create a renderer, render window, and interactor
+  vtkSmartPointer<vtkRenderer> renderer = 
+    vtkSmartPointer<vtkRenderer>::New();
+  vtkSmartPointer<vtkRenderWindow> renderWindow = 
+    vtkSmartPointer<vtkRenderWindow>::New();
+  renderWindow->AddRenderer(renderer);
+  vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor = 
+    vtkSmartPointer<vtkRenderWindowInteractor>::New();
+  renderWindowInteractor->SetPicker(pointPicker);
+  renderWindowInteractor->SetRenderWindow(renderWindow);
+ 
+  vtkSmartPointer<MouseInteractorStylePP> style = 
+    vtkSmartPointer<MouseInteractorStylePP>::New();
+  renderWindowInteractor->SetInteractorStyle( style );
+ 
+  // Add the actor to the scene
+  renderer->AddActor(actor);
+  renderer->SetBackground(1,1,1); // Background color white
+ 
+  // Render and interact
+  renderWindow->Render();
+  renderWindowInteractor->Start();
+  return EXIT_SUCCESS;
+}
+
+#include <vtkVersion.h>
+#include <vtkSmartPointer.h>
+#include <vtkMath.h>
+#include <vtkActor.h>
+#include <vtkProperty.h>
+#include <vtkSphereSource.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkObjectFactory.h>
+#include <vtkSphereSource.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkPropPicker.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkRenderer.h>
+ 
+// Handle mouse events
+class MouseInteractorHighLightActor : public vtkInteractorStyleTrackballCamera
+{
+public:
+  static MouseInteractorHighLightActor* New();
+  vtkTypeMacro(MouseInteractorHighLightActor, vtkInteractorStyleTrackballCamera);
+ 
+  MouseInteractorHighLightActor()
+  {
+    LastPickedActor = NULL;
+    LastPickedProperty = vtkProperty::New();
+  }
+  virtual ~MouseInteractorHighLightActor()
+  {
+    LastPickedProperty->Delete();
+  }
+  virtual void OnLeftButtonDown()
+  {
+    int* clickPos = this->GetInteractor()->GetEventPosition();
+ 
+    // Pick from this location.
+    vtkSmartPointer<vtkPropPicker>  picker =
+      vtkSmartPointer<vtkPropPicker>::New();
+    picker->Pick(clickPos[0], clickPos[1], 0, this->GetDefaultRenderer());
+ 
+    // If we picked something before, reset its property
+    if (this->LastPickedActor)
+      {
+      this->LastPickedActor->GetProperty()->DeepCopy(this->LastPickedProperty);
+      }
+    this->LastPickedActor = picker->GetActor();
+    if (this->LastPickedActor)
+      {
+      // Save the property of the picked actor so that we can
+      // restore it next time
+      this->LastPickedProperty->DeepCopy(this->LastPickedActor->GetProperty());
+      // Highlight the picked actor by changing its properties
+      this->LastPickedActor->GetProperty()->SetColor(1.0, 0.0, 0.0);
+      this->LastPickedActor->GetProperty()->SetDiffuse(1.0);
+      this->LastPickedActor->GetProperty()->SetSpecular(0.0);
+      }
+ 
+    // Forward events
+    vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
+  }
+ 
+private:
+  vtkActor    *LastPickedActor;
+  vtkProperty *LastPickedProperty;
+};
+ 
+vtkStandardNewMacro(MouseInteractorHighLightActor);
+ 
+// Execute application.
+int main(int argc, char *argv[])
+{
+  int numberOfSpheres = 10;
+  if (argc > 1)
+    {
+    numberOfSpheres = atoi(argv[1]);
+    }
+  // A renderer and render window
+  vtkSmartPointer<vtkRenderer> renderer =
+    vtkSmartPointer<vtkRenderer>::New();
+  vtkSmartPointer<vtkRenderWindow> renderWindow =
+    vtkSmartPointer<vtkRenderWindow>::New();
+  renderWindow->AddRenderer ( renderer );
+ 
+  // An interactor
+  vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
+    vtkSmartPointer<vtkRenderWindowInteractor>::New();
+  renderWindowInteractor->SetRenderWindow ( renderWindow );
+ 
+  // Set the custom type to use for interaction.
+  vtkSmartPointer<MouseInteractorHighLightActor> style =
+    vtkSmartPointer<MouseInteractorHighLightActor>::New();
+  style->SetDefaultRenderer(renderer);
+ 
+  renderWindowInteractor->SetInteractorStyle( style );
+ 
+  for (int i = 0; i < numberOfSpheres; ++i)
+    {
+    vtkSmartPointer<vtkSphereSource> source =
+      vtkSmartPointer<vtkSphereSource>::New();
+    double x, y, z, radius;
+    x = vtkMath::Random(-5,5);
+    y = vtkMath::Random(-5,5);
+    z = vtkMath::Random(-5,5);
+    radius = vtkMath::Random(.5, 1.0);
+    source->SetRadius(radius);
+    source->SetCenter(x, y, z);
+    source->SetPhiResolution(11);
+    source->SetThetaResolution(21);
+    vtkSmartPointer<vtkPolyDataMapper> mapper =
+      vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetInputConnection ( source->GetOutputPort());
+    vtkSmartPointer<vtkActor> actor =
+      vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper ( mapper );
+    double r, g, b;
+    r = vtkMath::Random(.4, 1.0);
+    g = vtkMath::Random(.4, 1.0);
+    b = vtkMath::Random(.4, 1.0);
+    actor->GetProperty()->SetDiffuseColor(r, g, b);
+    actor->GetProperty()->SetDiffuse(.8);
+    actor->GetProperty()->SetSpecular(.5);
+    actor->GetProperty()->SetSpecularColor(1.0,1.0,1.0);
+    actor->GetProperty()->SetSpecularPower(30.0);
+    renderer->AddActor ( actor );
+    }
+ 
+  renderer->SetBackground ( .3, .4, .5 );
+ 
+  // Render and interact
+  renderWindow->Render();
+  renderWindowInteractor->Initialize();
+  renderWindowInteractor->Start();
+ 
+  return EXIT_SUCCESS;
+}
+
+
+#include <vtkVersion.h>
+#include <vtkSmartPointer.h>
+#include <vtkActor.h>
+#include <vtkSphereSource.h>
+#include <vtkRendererCollection.h>
+#include <vtkCellArray.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkObjectFactory.h>
+#include <vtkPlaneSource.h>
+#include <vtkPoints.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkPropPicker.h>
+#include <vtkRenderWindow.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkRenderer.h>
+ 
+// Handle mouse events
+class MouseInteractorStyle2 : public vtkInteractorStyleTrackballCamera
+{
+  public:
+    static MouseInteractorStyle2* New();
+    vtkTypeMacro(MouseInteractorStyle2, vtkInteractorStyleTrackballCamera);
+ 
+    virtual void OnLeftButtonDown()
+    {
+      int* clickPos = this->GetInteractor()->GetEventPosition();
+ 
+      // Pick from this location.
+      vtkSmartPointer<vtkPropPicker>  picker =
+        vtkSmartPointer<vtkPropPicker>::New();
+      picker->Pick(clickPos[0], clickPos[1], 0, this->GetDefaultRenderer());
+ 
+      double* pos = picker->GetPickPosition();
+      std::cout << "Pick position (world coordinates) is: "
+                << pos[0] << " " << pos[1]
+                << " " << pos[2] << std::endl;
+ 
+      std::cout << "Picked actor: " << picker->GetActor() << std::endl;
+      //Create a sphere
+      vtkSmartPointer<vtkSphereSource> sphereSource =
+        vtkSmartPointer<vtkSphereSource>::New();
+      sphereSource->SetCenter(pos[0], pos[1], pos[2]);
+      sphereSource->SetRadius(0.1);
+ 
+      //Create a mapper and actor
+      vtkSmartPointer<vtkPolyDataMapper> mapper =
+        vtkSmartPointer<vtkPolyDataMapper>::New();
+      mapper->SetInputConnection(sphereSource->GetOutputPort());
+ 
+      vtkSmartPointer<vtkActor> actor =
+        vtkSmartPointer<vtkActor>::New();
+      actor->SetMapper(mapper);
+ 
+ 
+      //this->GetInteractor()->GetRenderWindow()->GetRenderers()->GetDefaultRenderer()->AddActor(actor);
+      this->GetDefaultRenderer()->AddActor(actor);
+      // Forward events
+      vtkInteractorStyleTrackballCamera::OnLeftButtonDown();
+    }
+ 
+  private:
+ 
+};
+ 
+vtkStandardNewMacro(MouseInteractorStyle2);
+ 
+// Execute application.
+int main(int, char *[])
+{
+  vtkSmartPointer<vtkPlaneSource> planeSource =
+    vtkSmartPointer<vtkPlaneSource>::New();
+  planeSource->Update();
+ 
+  // Create a polydata object
+  vtkPolyData* polydata = planeSource->GetOutput();
+ 
+  // Create a mapper
+  vtkSmartPointer<vtkPolyDataMapper> mapper =
+    vtkSmartPointer<vtkPolyDataMapper>::New();
+#if VTK_MAJOR_VERSION <= 5
+  mapper->SetInput ( polydata );
+#else
+  mapper->SetInputData ( polydata );
+#endif
+ 
+  // Create an actor
+  vtkSmartPointer<vtkActor> actor =
+    vtkSmartPointer<vtkActor>::New();
+  actor->SetMapper ( mapper );
+ 
+  std::cout << "Actor address: " << actor << std::endl;
+ 
+  // A renderer and render window
+  vtkSmartPointer<vtkRenderer> renderer =
+    vtkSmartPointer<vtkRenderer>::New();
+  vtkSmartPointer<vtkRenderWindow> renderWindow =
+    vtkSmartPointer<vtkRenderWindow>::New();
+  renderWindow->AddRenderer ( renderer );
+ 
+  // An interactor
+  vtkSmartPointer<vtkRenderWindowInteractor> renderWindowInteractor =
+    vtkSmartPointer<vtkRenderWindowInteractor>::New();
+  renderWindowInteractor->SetRenderWindow ( renderWindow );
+ 
+  // Set the custom stype to use for interaction.
+  vtkSmartPointer<MouseInteractorStyle2> style =
+    vtkSmartPointer<MouseInteractorStyle2>::New();
+  style->SetDefaultRenderer(renderer);
+ 
+  renderWindowInteractor->SetInteractorStyle( style );
+ 
+  // Add the actors to the scene
+  renderer->AddActor ( actor );
+  renderer->SetBackground ( 0,0,1 );
+ 
+  // Render and interact
+  renderWindow->Render();
+  renderWindowInteractor->Initialize();
+  renderWindowInteractor->Start();
+ 
+  return EXIT_SUCCESS;
+}
+
+
+
+vtkInteractorStyleTrackballCamera (02C0BC38)
+  Debug: Off
+  Modified Time: 1395
+  Reference Count: 2
+  Registered Events: 
+    Registered Observers:
+      vtkObserver (02C14C00)
+        Event: 42
+        EventName: InteractionEvent
+        Command: 02C33590
+        Priority: 0
+        Tag: 2
+      vtkObserver (02C14BC0)
+        Event: 43
+        EventName: EndInteractionEvent
+        Command: 02C33590
+        Priority: 0
+        Tag: 3
+      vtkObserver (02C14B20)
+        Event: 12
+        EventName: LeftButtonPressEvent
+        Command: 02BEFA58
+        Priority: 0
+        Tag: 4
+      vtkObserver (02C14EE0)
+        Event: 41
+        EventName: StartInteractionEvent
+        Command: 02C33590
+        Priority: 0
+        Tag: 1
+  Current Renderer: 00000000
+  Default Renderer: 00000000
+  Enabled: 0
+  Priority: 0
+  Interactor: 02B88A50
+  Key Press Activation: Off
+  Key Press Activation Value: i
+  Auto Adjust Camera Clipping Range On
+  Pick Color: (1, 0, 0)
+  CurrentRenderer: 00000000
+  Picked Renderer: (none)
+  Current Actor: (none)
+  Interactor: 02B88A50
+  Prop Picked: No
+  State: 0
+  UseTimers: 0
+  HandleObservers: 1
+  MouseWheelMotionFactor: 1
+  Timer Duration: 10
+  TDxStyle:     Debug: Off
+    Modified Time: 1564
+    Reference Count: 1
+    Registered Events: (none)
+    Settings: 
+      Debug: Off
+      Modified Time: 1565
+      Reference Count: 1
+      Registered Events: (none)
+      AngleSensitivity: 1
+      UseRotationX: 1
+      UseRotationY: 1
+      UseRotationZ: 1
+      TranslationXSensitivity: 1
+      TranslationYSensitivity: 1
+      TranslationZSensitivity: 1
+  MotionFactor: 10

@@ -1,0 +1,6 @@
+function [width,height]=chooseWH(slice)
+n=size(slice);
+mArray=size(n,2);
+
+for i=1:n
+    mArray(i,1)=max(slice(i,1)(:))

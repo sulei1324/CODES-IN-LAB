@@ -1,0 +1,7 @@
+function [output] = sortSingleColumnData(inputXls,whichSheet,columnS,columnE,title)
+
+n=size(title,1);
+columnRange=sprintf()
+array=xlsread(inputXls,whichSheet,)
+
+

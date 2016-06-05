@@ -1,0 +1,28 @@
+# the names of the nodes
+cu01 cu02 cu03
+# the total number of processes
+2
+# the address of the source file (without the '\' in the end)
+G:\sulei\workplace\mpi\src\test\rawdata\TDI111
+# the address of the target file (without the '\' in the end)
+G:\sulei\workplace\mpi\src\test\result\TDI111
+# the depth of the image
+8
+# the initial sequence number
+6
+# the terminal sequence number
+12
+# choose 1 for projection, 0 for no projection
+1
+# the thickness of the projection
+2
+# choose 1 for resampling, 0 for no resampling
+1
+# the reciprocal of the scale of the resampling
+10 10 2
+# the frame information: x_begin x_end y_begin y_end
+40 57 31 60
+# the prefix of the frame image name
+test_
+# the postfix of the frame image name
+.jpg

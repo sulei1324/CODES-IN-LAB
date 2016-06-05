@@ -1,0 +1,14 @@
+function [out]=creatRGB(,sinR)
+
+
+ball=sphericalArea(R);
+lBall=size(ball,1);
+for i=1:m
+    x=singleLineSwc(i,3);
+    y=singleLineSwc(i,4);
+    for j=1:lBall
+        ty=y+ball(j,1);
+        tx=x+ball(j,2);
+        b(ty,tx,:)=[0 1 0];
+    end
+end

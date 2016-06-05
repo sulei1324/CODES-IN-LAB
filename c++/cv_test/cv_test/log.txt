@@ -1,0 +1,8 @@
+the whole elapsed time is: 0
+"G:/sulei/workplace/vs/cv_test/cv_test/test\01025.tar"
+"G:/sulei/workplace/vs/cv_test/cv_test/test\01026.tar"
+"G:/sulei/workplace/vs/cv_test/cv_test/test\01027.tar"
+"G:/sulei/workplace/vs/cv_test/cv_test/test\01028.tar"
+"G:/sulei/workplace/vs/cv_test/cv_test/test\01031.tar"
+"G:/sulei/workplace/vs/cv_test/cv_test/test\01035.tar"
+the whole elapsed time is: 0

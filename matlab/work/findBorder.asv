@@ -1,0 +1,69 @@
+function border=findBorder(inImage)
+[m,n]=size(inImage);
+for i=1:m
+    for j=1:n
+        if(inImage(i,j)==1) break;
+        end
+    end
+end
+border=zeros(m,n);
+x=i;
+y=j-1;
+num=0;
+i=inImage;
+o=border;
+while(1)
+    if((x==i)&(y==j)&(num~=0)) break;
+    end
+    o(x,y)=1;
+    if((i(x,y+1)==0)&(i(x-1,y+1)==1)) 
+        num=num+1;
+        x=x;
+        y=y+1;
+        continue;
+    end
+    if((i(x-1,y+1)==0)&(i(x-1,y)==1)) 
+        num=num+1;
+        x=x-1;
+        y=y+1;
+        continue;
+    end
+    if((i(x-1,y==0)&(i(x-1,y-1)==1)) 
+        num=num+1;
+        x=x-1;
+        y=y;
+        continue;
+    end
+    if((i(x-1,y-1==0)&(i(x,y-1)==1)) 
+        num=num+1;
+        x=x-1;
+        y=y-1;
+        continue;
+    end
+    if((i(x,y-1==0)&(i(x+1,y-1)==1)) 
+        num=num+1;
+        x=x;
+        y=y-1;
+        continue;
+    end
+    if((i(x+1,y-1==0)&(i(x+1,y)==1)) 
+        num=num+1;
+        x=x+1;
+        y=y-1;
+        continue;
+    end
+    if((i(x+1,y==0)&(i(x+1,y+1)==1)) 
+        num=num+1;
+        x=x+1;
+        y=y;
+        continue;
+    end
+    if((i(x+1,y+1==0)&(i(x,y+1)==1)) 
+        num=num+1;
+        x=x+1;
+        y=y+1;
+        continue;
+    end
+end
+border=o;
+

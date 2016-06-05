@@ -1,0 +1,14 @@
+function [output] = mostValue(input)
+
+m=size(input,1);
+uniInput=unique(input,'rows');
+uM=size(uniInput,1);
+num=zeros(uM,1);
+for i=1:uM
+    value=unique(i);
+    a=find(input==value);
+    num(i)=size(a,1);
+end
+
+
+

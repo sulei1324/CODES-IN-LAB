@@ -1,0 +1,18 @@
+function [outImage]=chooseMax(inImage,R)
+
+[m,n]=size(inImage);
+
+% rollingball radius = R, so sliding window's side length = L
+L=2*R+1;
+% velocity
+v=L/2;
+
+temp=inImage;
+
+% raw_image:1+R:m-R,1+R:n-R
+
+for i=1+R:v:m-R
+    for j=1+R:v:n-R
+        temp(i,j)=max(inImage(i-R:i+R));
+    end
+end

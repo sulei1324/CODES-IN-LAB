@@ -1,0 +1,10 @@
+﻿<html>
+<head><title>博客</title></head>
+<body>
+{% for post in posts %}
+<h2>{{ post.title }}</h2>
+<p>{{ post.timestamp|date }}</p>
+<p>{{ post.body }}</p>
+{% endfor %}
+</body>
+</html>
