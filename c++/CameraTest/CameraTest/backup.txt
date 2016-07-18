@@ -1,0 +1,119 @@
+                //if(t_i ==  1){
+                //    uint16 tchannals(0);
+                //    uint32 twidth(0);
+                //    uint32 theight(0);
+                //    uint16 tbits(0);
+                //    uint16 torientation(0);
+                //    uint32  trows_in_strip(0);
+                //    cout<<TIFFGetField(tif, TIFFTAG_SAMPLESPERPIXEL, &tchannals)<<"Channals: "<<tchannals<<endl;             //1
+                //    cout<<TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &twidth)<<"Width: "<<twidth<<endl;                                   //512
+                //    cout<<TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &theight)<<"Height: "<<theight<<endl;                              //512
+                //    cout<<TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &tbits)<<"Bits: "<<tbits<<endl;                                         //16 8
+                //    cout<<TIFFGetField(tif, TIFFTAG_ROWSPERSTRIP, &trows_in_strip)<<"RowsInStrip: "<<trows_in_strip<<endl; //512
+                //    cout<<TIFFGetField(tif, TIFFTAG_ORIENTATION, &torientation)<<"ORIENTATION: "<<torientation<<endl;     //1 top left
+                //}
+                //for(u_short l = z_b_s; l <= z_b_e; ++l){
+                //    TIFFSetDirectory(tif, l);
+                //
+                //}
+                
+                
+                
+                
+    vtk_spnew(vtkRenderer, ren);
+    vtk_spnew(vtkRenderWindow, renWin);
+    vtk_spnew(vtkRenderWindowInteractor, iren);
+    vtk_sp(vtkVolume, volume);
+    vtk_sp(vtkActor, outlineActor);
+    vtk_spnew(vtkTransform, transformForVolume);
+    vtk_spnew(vtkInteractorStyleTrackballCamera, irenStyle);
+    vtk_sp(vtkCamera, camera);
+    vtk_spnew(MostdTraveller, travelStyle);
+    travelStyle->SetTravelLineIndex(1);
+    travelStyle->SetRenderer(ren);
+    renWin->AddRenderer(ren);
+    iren->SetRenderWindow(renWin);
+    iren->SetInteractorStyle(travelStyle);
+    
+    
+    SwcReader swc;
+    double ratio = 0.3;
+    swc.SetInputName("1_axon.swc");
+    if(swc.Update()){
+        travelStyle->SetSwc(&swc);
+        swc.BuildActors(ren, ratio);
+    }else{
+        return -1;
+    }
+    
+    
+    TestVtkVolume volumeWarpper;   
+    vLines& lines = swc.GetOutput();
+    vLine firstLine = lines.at(0);
+    vPoint firstPoint = firstLine.at(0);
+    
+    
+    u_int cacheNum = 10;
+    Mostd mostd("TDI072.mostd", 8);
+    u_int xBeg = static_cast<u_int>(firstPoint(1)  / ratio) - 100;
+    u_int xEnd = xBeg + 200;
+    u_int yBeg = static_cast<u_int>(firstPoint(2) / ratio) - 100;
+    u_int yEnd = yBeg+ 200;
+    u_int zBeg = firstPoint(3) - 50;
+    u_int zEnd = zBeg + 100;
+    u_int width = xEnd - xBeg + 1;
+    u_int height = yEnd - yBeg + 1;
+    u_int thick = zEnd - zBeg + 1;
+    
+    u_int imagesSize[3] = {width, height, thick};
+    travelStyle->SetBitNum(8);
+    
+
+    
+    if(mostd.loadMostd() && mostd.setROI(xBeg, xEnd, yBeg, yEnd, zBeg, zEnd)){
+        travelStyle->SetMostd(&mostd);
+        if(mostd.loadImages()){
+            vector<float>& resolution = mostd.GetResolution();
+            travelStyle->SetResolution(resolution);
+            volumeWarpper.SetImages(mostd.GetImageData8(), imagesSize);
+            volumeWarpper.SetResolution(resolution);
+            if(volumeWarpper.Update()){
+                volume = volumeWarpper.GetOutput();
+                outlineActor = volumeWarpper.GetOutline();
+            }
+            //mostd.showImages();
+        }
+    }
+    
+    
+    
+    
+    transformForVolume->Translate(xBeg, yBeg, zBeg);
+    volume->SetUserTransform(transformForVolume);
+    outlineActor->SetUserTransform(transformForVolume);
+    ren->AddActor(volume);
+    ren->AddActor(outlineActor);
+    
+    
+    
+    ren->ResetCamera();
+    
+    renWin->Render();
+    iren->Initialize();
+    iren->Start();
+    
+    
+    
+    u_int maxCacheNum = 3;
+    u_int imageBits = 8;
+    string name1("1.tif");
+    string name2("2.tif");
+    string name3("3.tif");
+    string name4("4.tif");
+    ImageCaches caches(maxCacheNum, imageBits);
+    caches.GetSmartCache(name1);
+    caches.GetSmartCache(name2);
+    caches.GetSmartCache(name3);
+    //caches.GetSmartCache(name2);
+    caches.GetSmartCache(name4);
+    //caches.TravelCaches();

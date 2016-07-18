@@ -1,0 +1,153 @@
+这样设置外边框不好，因为速度很慢。
+
+
+#include "SwcReader.h"
+#include "MostdReader.h"
+#include "TestVtkVolume.h"
+#include "2DViewStyle.h"
+
+
+
+
+int _tmain(int argc, _TCHAR* argv[])
+{
+    vtk_spnew(vtkRenderer, ren);
+    vtk_spnew(vtkRenderWindow, renWin);
+    vtk_spnew(vtkRenderWindowInteractor, iren);
+    vtk_spnew(TwoDViewStyle, twoDStyle);
+    vtk_spnew(vtkTransform, transformForVolume);
+    vtk_spnew(vtkInteractorStyleTrackballCamera, irenStyle);
+    vtk_spnew(vtkRenderer, renBack);
+    vtk_spnew(vtkImageData, blockImages);
+    vtk_spnew(vtkActor, blockActor);
+    vtk_spnew(vtkPolyDataMapper, blockMapper);
+    vtk_spnew(vtkImageDataGeometryFilter, geoFilter);
+    
+    
+    vtk_sp(vtkCamera, camera);
+    vtk_sp(vtkVolume, volume);
+    vtk_sp(vtkActor, outlineActor);
+    renWin->SetNumberOfLayers(2);
+    renWin->AddRenderer(ren);
+    renWin->AddRenderer(renBack);
+    ren->SetLayer(1);
+    renBack->SetLayer(0);
+    twoDStyle->SetRenderer(ren);
+    
+    iren->SetRenderWindow(renWin);
+    iren->SetInteractorStyle(irenStyle);
+
+
+    SwcReader swc;
+    double ratio = 0.3;
+    swc.SetInputName("test1.swc");
+    if(swc.Update()){
+        swc.BuildActors(ren, ratio);
+    }else{
+        return -1;
+    }
+
+
+    TestVtkVolume volumeWarpper;   
+    vLines& lines = swc.GetOutput();
+    vLine firstLine = lines.at(0);
+    vPoint firstPoint = firstLine.at(0);
+
+
+
+    Mostd mostd("TDI072.mostd", 8);
+    u_int xBeg = static_cast<u_int>(firstPoint(1)  / ratio) - 200;
+    u_int xEnd = xBeg + 400;
+    u_int yBeg = static_cast<u_int>(firstPoint(2) / ratio) - 200;
+    u_int yEnd = yBeg+ 400;
+    u_int zBeg = firstPoint(3) - 100;
+    u_int zEnd = zBeg + 200;
+    u_int width = xEnd - xBeg + 1;
+    u_int height = yEnd - yBeg + 1;
+    u_int thick = zEnd - zBeg + 1;
+    cout<<xBeg<<" "<<xEnd<<" "<<yBeg<<" "<<yEnd<<" "<<zBeg<<" "<<zEnd<<endl;
+    u_int imagesSize[3] = {width, height, thick};
+
+    blockImages->SetWholeExtent(0, 600 - 1, 0, height - 1, 0, thick - 1);
+    blockImages->SetExtent(0, 600 - 1, 0, height - 1, 0, thick - 1);
+    blockImages->SetNumberOfScalarComponents(3);
+    blockImages->SetScalarTypeToUnsignedChar();
+    for(u_int z = 0; z < thick; ++z){
+        for(u_int x = 0; x < 600; ++x){
+            for(u_int y = 0; y < height; ++y){
+                u_char *pixel = reinterpret_cast<u_char *>(blockImages->GetScalarPointer(x, y, z));
+                if((x >=0 && x <= 5) || (y >=0 && y <= 5) || (x <= 600 - 1 && x >= 600 -5) || (y <= height - 1 && y >= height -5)){
+                    pixel[0] = 255;
+                    pixel[1] = 0;
+                    pixel[2] = 0;
+                }else{
+                    pixel[0] = 0;
+                    pixel[1] = 0;
+                    pixel[2] = 0;
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+
+    if(mostd.loadMostd() && mostd.setROI(xBeg, xEnd, yBeg, yEnd, zBeg, zEnd)){
+        if(mostd.loadImages()){
+            vector<float>& resolution = mostd.GetResolution();
+
+            volumeWarpper.SetImages(mostd.GetImageData8(), imagesSize);
+            volumeWarpper.SetResolution(resolution);
+            if(volumeWarpper.Update()){
+                volume = volumeWarpper.GetOutput();
+                outlineActor = volumeWarpper.GetOutline();
+            }
+            //mostd.showImages();
+        }
+    }else{
+        return -1;
+    }
+
+
+
+
+    transformForVolume->Translate(xBeg, yBeg, zBeg);
+    volume->SetUserTransform(transformForVolume);
+    outlineActor->SetUserTransform(transformForVolume);
+    ren->AddActor(volume);
+    ren->AddActor(outlineActor);
+    
+    geoFilter->SetInput(blockImages);
+    blockMapper->SetInputConnection(geoFilter->GetOutputPort());
+    
+    
+    blockActor->SetMapper(blockMapper);
+    blockActor->SetUserTransform(transformForVolume);
+    renBack->AddActor(blockActor);
+
+
+
+
+    //renBack->SetBackground(0.2, 0.0, 0.0);
+    ren->SetInteractive(true);
+    renBack->SetInteractive(false);
+    renBack->ResetCamera();
+    ren->ResetCamera();
+    camera = ren->GetActiveCamera();
+    renBack->SetActiveCamera(camera);
+    camera->SetParallelProjection(true);
+    camera->SetPosition((xBeg + xEnd) / 2, (yBeg + yEnd) / 2, zEnd + 1000);
+    camera->SetFocalPoint((xBeg + xEnd) / 2, (yBeg + yEnd) / 2, zBeg);
+    camera->SetClippingRange(1000, 1005);
+
+
+
+    renWin->Render();
+    iren->Initialize();
+    iren->Start();
+
+    return 0;
+}
